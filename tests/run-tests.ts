@@ -25,6 +25,12 @@ async function run() {
   res = normalizeVietnameseEnglishTerminology('ét gi ây', { selectedAccentProfile: 'southern-vietnamese', currentText: 'ét gi ây' });
   assert(res.normalizedText.includes('SGA') || res.normalizedText.includes('SGAs'), 'SGAs: ét gi ây normalized');
 
+  res = normalizeVietnameseEnglishTerminology('ét chi ây', { selectedAccentProfile: 'mixed-unknown', currentText: 'ét chi ây' });
+  assert(res.normalizedText.includes('SGA') || res.normalizedText.includes('SGAs'), 'SGAs: ét chi ây normalized');
+
+  res = normalizeVietnameseEnglishTerminology('êts chi ây', { selectedAccentProfile: 'mixed-unknown', currentText: 'êts chi ây' });
+  assert(res.normalizedText.includes('SGA') || res.normalizedText.includes('SGAs'), 'SGAs: êts chi ây normalized');
+
   // road map / role map
   res = normalizeVietnameseEnglishTerminology('we discussed the road map for product', { selectedAccentProfile: 'mixed-unknown', previousText: '', currentText: 'road map', nextText: 'for product' });
   assert(res.normalizedText.includes('roadmap'), 'road map normalized to roadmap');
