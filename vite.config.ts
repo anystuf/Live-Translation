@@ -12,6 +12,11 @@ export default defineConfig(({ mode }) => {
   return {
     base,
     plugins: [react()],
+    resolve: {
+      alias: {
+        '/src': '/src',
+      },
+    },
     server: {
       port: 5173,
       proxy: {

@@ -22,6 +22,8 @@ export interface UseLiveTranslation {
   liveSource: string;
   /** Target-language transcript for the utterance in progress. */
   liveTarget: string;
+  liveSourceEdited: boolean;
+  liveTargetEdited: boolean;
   processingPhase: 'idle' | 'thinking' | 'typing' | 'answering';
   /** Finalised utterances, oldest first. */
   history: CaptionEntry[];
@@ -33,6 +35,8 @@ export interface UseLiveTranslation {
   sessionTargetLanguage: string | null;
   start(deviceId?: string): Promise<void>;
   stop(): Promise<void>;
+  setLiveSourceEdited(edited: boolean): void;
+  setLiveTargetEdited(edited: boolean): void;
   setAudioEnabled(enabled: boolean): void;
   setOutputDevice(deviceId: string | null): void;
   clearHistory(): void;
@@ -56,8 +60,10 @@ export function useLiveTranslation(settings: TranslationSettings): UseLiveTransl
   const [status, setStatus] = useState<ConnectionStatus>('idle');
   const [statusDetail, setStatusDetail] = useState('');
   const [liveSource, setLiveSource] = useState('');
+  const [liveSourceEdited, setLiveSourceEdited] = useState(false);
   const [processingPhase, setProcessingPhase] = useState<'idle' | 'thinking' | 'typing' | 'answering'>('idle');
   const [liveTarget, setLiveTarget] = useState('');
+  const [liveTargetEdited, setLiveTargetEdited] = useState(false);
   const [history, setHistory] = useState<CaptionEntry[]>([]);
   const [notices, setNotices] = useState<string[]>([]);
   const [micLabel, setMicLabel] = useState('');
@@ -80,6 +86,8 @@ export function useLiveTranslation(settings: TranslationSettings): UseLiveTransl
   // are mirrored into state.
   const sourceRef = useRef('');
   const targetRef = useRef('');
+  const liveSourceEditedRef = useRef(false);
+  const liveTargetEditedRef = useRef(false);
   const finaliseTimerRef = useRef<number | null>(null);
   const liveSourceCoalescerRef = useRef<ReturnType<typeof createFrameCoalescer<string>> | null>(null);
   const liveTargetCoalescerRef = useRef<ReturnType<typeof createFrameCoalescer<string>> | null>(null);
@@ -115,6 +123,16 @@ export function useLiveTranslation(settings: TranslationSettings): UseLiveTransl
   // settings through a ref rather than a captured value.
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
+
+  const liveSourceEditedSync = useCallback((edited: boolean) => {
+    liveSourceEditedRef.current = edited;
+    setLiveSourceEdited(edited);
+  }, []);
+
+  const liveTargetEditedSync = useCallback((edited: boolean) => {
+    liveTargetEditedRef.current = edited;
+    setLiveTargetEdited(edited);
+  }, []);
 
   const pushNotice = useCallback((message: string) => {
     setNotices((prev) => [...prev.slice(-4), message]);
@@ -159,14 +177,16 @@ export function useLiveTranslation(settings: TranslationSettings): UseLiveTransl
       finaliseTimerRef.current = null;
     }
 
-    const source = sourceRef.current.trim();
-    const target = targetRef.current.trim();
+    const source = (liveSourceEditedRef.current ? liveSource : sourceRef.current).trim();
+    const target = (liveTargetEditedRef.current ? liveTarget : targetRef.current).trim();
 
     if (!source && !target) {
       sourceRef.current = '';
       targetRef.current = '';
       setLiveSource('');
       setLiveTarget('');
+      liveSourceEditedSync(false);
+      liveTargetEditedSync(false);
       setProcessingPhase('idle');
       clearProcessingTimer();
       return;
@@ -178,6 +198,8 @@ export function useLiveTranslation(settings: TranslationSettings): UseLiveTransl
     targetRef.current = '';
     setLiveSource('');
     setLiveTarget('');
+    liveSourceEditedSync(false);
+    liveTargetEditedSync(false);
     setProcessingPhase('idle');
     clearProcessingTimer();
 
@@ -378,6 +400,8 @@ export function useLiveTranslation(settings: TranslationSettings): UseLiveTransl
     statusDetail,
     liveSource,
     liveTarget,
+    liveSourceEdited,
+    liveTargetEdited,
     processingPhase,
     history,
     notices,
@@ -392,6 +416,8 @@ export function useLiveTranslation(settings: TranslationSettings): UseLiveTransl
     setOutputDevice,
     clearHistory,
     operatorSuggestions,
+    setLiveSourceEdited: liveSourceEditedSync,
+    setLiveTargetEdited: liveTargetEditedSync,
     applyOperatorAction(suggestionId: string, action: 'apply' | 'ignore' | 'always-apply') {
       const sugs = operatorSuggestionsRef.current;
       const idx = sugs.findIndex((s) => s.id === suggestionId);
