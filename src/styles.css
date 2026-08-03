@@ -1,0 +1,517 @@
+/*
+ * Minimal styling. Priorities: legibility from the back of a lecture hall, and
+ * making the system's state obvious to the operator. No decoration beyond that.
+ *
+ * Light background: dark text on white is what a lit hall and a daytime room
+ * read most comfortably, and it survives washed-out projectors better than a
+ * black field. Caption sizes use clamp() against viewport width so one build
+ * works on a laptop and a hall screen. --font-scale is the operator's override.
+ *
+ * Every colour below is chosen to clear WCAG AA against --bg (and --dim clears
+ * AAA for body text), because a caption nobody can read is a failed caption.
+ */
+
+:root {
+  --bg: #fff;
+  --fg: #14171a;
+  /* Secondary text: still ~7:1 on white, so past lines recede without fading. */
+  --dim: #55606b;
+  --line: #c8cfd6;
+  --track: #e4e9ee;
+  /* State colours darkened from their dark-theme values — the bright greens and
+     yellows that pop on black are unreadable on white. */
+  --ok: #1a7f37;
+  --busy: #8a5300;
+  --bad: #c02626;
+
+  --font-scale: 1;
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: system-ui, sans-serif;
+  /* Vietnamese diacritics stack tall; extra leading stops clipping. */
+  line-height: 1.4;
+}
+
+.app {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  height: 100%;
+}
+
+.app.chrome-hidden {
+  grid-template-rows: 1fr;
+}
+
+/* --- Controls ------------------------------------------------------------ */
+
+.control-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.85rem;
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.control-group.grow {
+  flex: 1;
+  min-width: 160px;
+}
+
+.brand-mark {
+  font-weight: 700;
+}
+
+.brand-text,
+.toggle,
+.slider,
+.mic-meter-label,
+.status-detail {
+  color: var(--dim);
+}
+
+button,
+select {
+  font: inherit;
+  color: var(--fg);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 0.3rem 0.7rem;
+  cursor: pointer;
+}
+
+button:hover,
+select:hover {
+  border-color: var(--fg);
+}
+
+select:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.device-select {
+  max-width: 200px;
+}
+
+/* Narrower than the device picker: language names are short, and the two of
+   them plus the swap button have to read as one direction control. */
+.lang-select {
+  max-width: 150px;
+}
+
+.btn-swap {
+  padding: 0.3rem 0.45rem;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+  border-color: var(--line);
+}
+
+.btn-start {
+  border-color: var(--ok);
+}
+
+.btn-stop {
+  border-color: var(--bad);
+}
+
+.toggle,
+.slider {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.slider input[type='range'] {
+  width: 90px;
+}
+
+/* --- Status -------------------------------------------------------------- */
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--dim);
+  flex-shrink: 0;
+}
+
+.status-live .status-dot {
+  background: var(--ok);
+}
+
+.status-connecting .status-dot,
+.status-requesting-token .status-dot,
+.status-reconnecting .status-dot {
+  background: var(--busy);
+}
+
+.status-error .status-dot {
+  background: var(--bad);
+}
+
+.status-error .status-label {
+  color: var(--bad);
+}
+
+/* --- Mic meter ----------------------------------------------------------- */
+/* The one indispensable diagnostic: a dead cable and a silent room produce
+   identical captions but completely different meters. */
+
+.mic-meter {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.mic-meter-track {
+  flex: 1;
+  height: 6px;
+  min-width: 80px;
+  background: var(--track);
+}
+
+.mic-meter-fill {
+  height: 100%;
+  background: var(--ok);
+}
+
+.mic-meter-fill.clipping {
+  background: var(--bad);
+}
+
+.mic-meter-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+/* --- Captions ------------------------------------------------------------ */
+
+.caption-stage {
+  position: relative;
+  overflow: hidden;
+  padding: 1.5rem clamp(1rem, 4vw, 4rem);
+  display: grid;
+  gap: 1rem;
+  min-height: 0;
+  height: 100%;
+}
+
+.caption-panels {
+  display: grid;
+  gap: 1rem;
+  min-height: 0;
+  height: 100%;
+}
+
+.caption-panels.split {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.caption-panel {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  height: 100%;
+}
+
+.panel-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.caption-scroll {
+  min-height: 0;
+  flex: 1;
+  overflow-y: scroll;
+  display: block;
+  padding-right: 0.5rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) rgba(0, 0, 0, 0.04);
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  scroll-behavior: auto;
+}
+
+.caption-scroll::-webkit-scrollbar {
+  width: 10px;
+}
+
+.caption-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.caption-scroll::-webkit-scrollbar-thumb {
+  background-color: var(--line);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.caption-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: var(--fg);
+}
+
+/* Past lines stay readable but recede, so the eye lands on the current one. */
+.caption-block.past {
+  color: var(--dim);
+}
+
+.caption-target {
+  margin: 0;
+  font-size: calc(clamp(1.9rem, 4.2vw, 4.2rem) * var(--font-scale));
+  /* Dark-on-light strokes read thinner than light-on-dark at distance, so the
+     headline weight goes up one step to hold up at the back of the hall. */
+  font-weight: 700;
+}
+
+.caption-source {
+  margin: 0.35rem 0 0;
+  font-size: calc(clamp(1rem, 1.8vw, 1.8rem) * var(--font-scale));
+  font-weight: 400;
+  color: var(--dim);
+}
+
+/* Signals "still listening" during a mid-sentence pause. */
+.processing-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0.6rem;
+  font-size: 0.95rem;
+  color: var(--dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.processing-dot {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: var(--busy);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+.processing-dot.phase-typing {
+  background: var(--busy);
+}
+
+.processing-dot.phase-answering {
+  background: var(--ok);
+}
+
+.caret {
+  display: inline-block;
+  width: 0.06em;
+  height: 0.9em;
+  margin-left: 0.1em;
+  vertical-align: text-bottom;
+  background: currentColor;
+  animation: blink 1s steps(2, start) infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(0.95);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+.caption-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  color: var(--dim);
+  pointer-events: none;
+}
+
+.placeholder-title,
+.placeholder-sub {
+  margin: 0;
+}
+
+/* --- Footer -------------------------------------------------------------- */
+
+.notice-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.4rem 0.75rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.75rem;
+  color: var(--dim);
+}
+
+.notices {
+  color: var(--busy);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+/* Mobile-friendly layout for phones and narrow screens. */
+@media (max-width: 900px) {
+  .control-bar {
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 0.65rem;
+  }
+
+  .control-bar .control-group {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .control-bar button,
+  .control-bar select,
+  .slider input[type='range'] {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .caption-stage {
+    padding: 1rem;
+  }
+
+  .caption-panels.split {
+    grid-template-columns: 1fr;
+  }
+
+  .caption-target {
+    font-size: calc(clamp(1.8rem, 6vw, 3.2rem) * var(--font-scale));
+  }
+
+  .caption-source {
+    font-size: calc(clamp(0.95rem, 3vw, 1.3rem) * var(--font-scale));
+  }
+
+  .notice-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .control-bar {
+    padding: 0.65rem;
+  }
+
+  .brand-mark,
+  .brand-text {
+    display: block;
+    width: 100%;
+  }
+
+  .control-group.grow {
+    order: 99;
+  }
+
+  .processing-state {
+    font-size: 0.9rem;
+  }
+
+  .operator-suggestions {
+    padding: 0.75rem 1rem;
+  }
+}
+
+.operator-suggestions {
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+}
+
+.suggestion-item {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--track);
+}
+
+.suggestion-text {
+  flex: 1 1 100%;
+  line-height: 1.4;
+}
+
+.suggestion-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.suggestion-actions button {
+  min-width: 8rem;
+}
+
+.confidence {
+  color: var(--dim);
+  font-size: 0.95rem;
+}

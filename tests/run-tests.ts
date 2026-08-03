@@ -1,0 +1,47 @@
+import { createFrameCoalescer } from '../src/lib/frameCoalescer';
+import { normalizeVietnameseEnglishTerminology } from '../src/lib/vietnameseNormalizer';
+
+function assert(condition: boolean, msg: string) {
+  if (!condition) {
+    console.error('FAIL:', msg);
+    process.exitCode = 1;
+  } else {
+    console.log('ok:', msg);
+  }
+}
+
+async function run() {
+  const coalescedValues: string[] = [];
+  const coalescer = createFrameCoalescer<string>((value) => coalescedValues.push(value));
+  coalescer.push('first');
+  coalescer.push('second');
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert(coalescedValues.length === 1 && coalescedValues[0] === 'second', 'frame coalescer keeps the latest value');
+
+  // SGAs
+  let res = normalizeVietnameseEnglishTerminology('ess gee ayz', { selectedAccentProfile: 'mixed-unknown', currentText: 'ess gee ayz' });
+  assert(res.normalizedText.includes('SGA') || res.normalizedText.includes('SGAs'), 'SGAs: ess gee ayz normalized');
+
+  res = normalizeVietnameseEnglishTerminology('ét gi ây', { selectedAccentProfile: 'southern-vietnamese', currentText: 'ét gi ây' });
+  assert(res.normalizedText.includes('SGA') || res.normalizedText.includes('SGAs'), 'SGAs: ét gi ây normalized');
+
+  // road map / role map
+  res = normalizeVietnameseEnglishTerminology('we discussed the road map for product', { selectedAccentProfile: 'mixed-unknown', previousText: '', currentText: 'road map', nextText: 'for product' });
+  assert(res.normalizedText.includes('roadmap'), 'road map normalized to roadmap');
+
+  res = normalizeVietnameseEnglishTerminology('this is a role map', { selectedAccentProfile: 'mixed-unknown', currentText: 'role map' });
+  // ambiguous: should not auto-correct to roadmap without context
+  assert(!res.normalizedText.includes('roadmap') || res.suggestions.length > 0, 'role map not auto-changed without strong context');
+
+  // cohort
+  res = normalizeVietnameseEnglishTerminology('co hort two', { selectedAccentProfile: 'mixed-unknown', currentText: 'co hort two' });
+  assert(res.normalizedText.includes('cohort') || res.suggestions.length > 0, 'co hort two normalized or suggested');
+
+  // painpoint
+  res = normalizeVietnameseEnglishTerminology('we found a painpoint in the user flow', { selectedAccentProfile: 'mixed-unknown', currentText: 'painpoint' });
+  assert(res.normalizedText.includes('pain point'), 'painpoint normalized');
+
+  console.log('Finished tests.');
+}
+
+void run();
