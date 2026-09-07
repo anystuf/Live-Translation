@@ -33,8 +33,10 @@ export interface UseLiveTranslation {
   audioEnabled: boolean;
   isRunning: boolean;
   sessionTargetLanguage: string | null;
-  start(deviceId?: string): Promise<void>;
+  start(deviceId?: string, sessionConfig?: { mode?: 'translate' | 'transcribe'; targetLanguage?: string; echoTargetLanguage?: boolean }): Promise<void>;
   stop(): Promise<void>;
+  setLiveSourceText(value: string): void;
+  setLiveTargetText(value: string): void;
   setLiveSourceEdited(edited: boolean): void;
   setLiveTargetEdited(edited: boolean): void;
   setAudioEnabled(enabled: boolean): void;
@@ -265,7 +267,10 @@ export function useLiveTranslation(settings: TranslationSettings): UseLiveTransl
   }, [finaliseTurn]);
 
   const start = useCallback(
-    async (deviceId?: string) => {
+    async (
+      deviceId?: string,
+      sessionConfig?: { mode?: 'translate' | 'transcribe'; targetLanguage?: string; echoTargetLanguage?: boolean },
+    ) => {
       if (sessionRef.current) return;
 
       setNotices([]);
@@ -276,6 +281,14 @@ export function useLiveTranslation(settings: TranslationSettings): UseLiveTransl
       if (outputDeviceIdRef.current) {
         void playback.setOutputDevice(outputDeviceIdRef.current);
       }
+
+      const mode = sessionConfig?.mode ?? 'translate';
+      const targetLanguage =
+        sessionConfig?.targetLanguage ??
+        (mode === 'transcribe' ? settingsRef.current.sourceLanguage : settingsRef.current.targetLanguage);
+      const echoTargetLanguage =
+        sessionConfig?.echoTargetLanguage ??
+        (mode === 'transcribe' ? false : settingsRef.current.echoTargetLanguage);
 
       const session = new LiveTranslateSession(
         {
@@ -311,12 +324,12 @@ export function useLiveTranslation(settings: TranslationSettings): UseLiveTransl
           onNotice: pushNotice,
         },
         {
-          targetLanguageCode: settingsRef.current.targetLanguage,
-          echoTargetLanguage: settingsRef.current.echoTargetLanguage,
+          targetLanguageCode: targetLanguage,
+          echoTargetLanguage: echoTargetLanguage,
         },
       );
       sessionRef.current = session;
-      setSessionTargetLanguage(settingsRef.current.targetLanguage);
+      setSessionTargetLanguage(targetLanguage);
 
       try {
         const capture = await startCapture({
@@ -359,6 +372,20 @@ export function useLiveTranslation(settings: TranslationSettings): UseLiveTransl
     setIsRunning(false);
     setMicLevel(0);
   }, [finaliseTurn]);
+
+  const setLiveSourceText = useCallback((value: string) => {
+    // Keep the ongoing transcription alive: an inline correction is a display
+    // override, not a permanent lock that tells the session the live stream has
+    // stopped and should be treated as finalised/paused.
+    sourceRef.current = value;
+    setLiveSource(value);
+  }, []);
+
+  const setLiveTargetText = useCallback((value: string) => {
+    // Keep the live target stream moving while the operator corrects a word.
+    targetRef.current = value;
+    setLiveTarget(value);
+  }, []);
 
   const setAudioEnabled = useCallback((enabled: boolean) => {
     audioEnabledRef.current = enabled;
@@ -412,6 +439,8 @@ export function useLiveTranslation(settings: TranslationSettings): UseLiveTransl
     sessionTargetLanguage,
     start,
     stop,
+    setLiveSourceText,
+    setLiveTargetText,
     setAudioEnabled,
     setOutputDevice,
     clearHistory,

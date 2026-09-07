@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: ueh-live-translation
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: TOKEN_EXPIRE_MINUTES
+        value: 30
+      - key: TOKEN_NEW_SESSION_EXPIRE_MINUTES
+        value: 2

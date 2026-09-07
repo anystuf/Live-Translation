@@ -17,6 +17,8 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import { GoogleGenAI } from '@google/genai';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { LIVE_TRANSLATE_MODEL } from './constants.js';
 
 const PORT = Number(process.env.PORT ?? 8787);
@@ -35,12 +37,17 @@ if (!API_KEY) {
   process.exit(1);
 }
 
-const allowedOrigins = (
-  process.env.ALLOWED_ORIGINS ?? 'http://localhost:5173,http://127.0.0.1:5173'
-)
+const defaultOrigins = 'http://localhost:5173,http://127.0.0.1:5173';
+const allowedOrigins = (process.env.ALLOWED_ORIGINS ?? defaultOrigins)
   .split(',')
   .map((o) => o.trim())
   .filter(Boolean);
+
+// Render supplies this automatically. Including it makes a same-service
+// deployment work without having to know the generated URL in advance.
+if (process.env.RENDER_EXTERNAL_URL) {
+  allowedOrigins.push(process.env.RENDER_EXTERNAL_URL.replace(/\/$/, ''));
+}
 
 const isLocalhostOrigin = (origin: string) => {
   try {
@@ -58,6 +65,8 @@ const ai = new GoogleGenAI({
 });
 
 const app = express();
+const serverDirectory = path.dirname(fileURLToPath(import.meta.url));
+const distDirectory = path.resolve(serverDirectory, '..', 'dist');
 
 app.use(
   cors({
@@ -123,6 +132,15 @@ app.post('/api/token', async (_req, res) => {
     console.error('[token] mint failed:', message);
     res.status(502).json({ error: 'Failed to mint ephemeral token', detail: message });
   }
+});
+
+// In production the same Node service hosts the Vite build. Keeping the UI and
+// /api/token on one origin avoids exposing the Gemini key or requiring a
+// separate backend URL in the browser bundle.
+app.use(express.static(distDirectory));
+app.use((req, res, next) => {
+  if (req.method !== 'GET' || req.path.startsWith('/api/')) return next();
+  res.sendFile(path.join(distDirectory, 'index.html'));
 });
 
 app.listen(PORT, () => {

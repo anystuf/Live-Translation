@@ -6,7 +6,7 @@
  * confirm the system heard correctly. Recent history scrolls above the live
  * line so a late glance still catches the last sentence.
  */
-import { memo, useCallback, useEffect, useRef } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import type { CaptionEntry, TranslationSettings } from '../lib/types';
 import { langAttribute, languageLabel } from '../lib/languages';
 import { getProcessingLabel } from '../lib/processingState';
@@ -19,15 +19,21 @@ export const CaptionStage = memo(function CaptionStage({
   showSource,
   fontScale,
   settings,
+  mode,
+  onEditSource,
+  onEditTarget,
 }: {
   history: CaptionEntry[];
   liveSource: string;
   liveTarget: string;
   processingPhase: 'idle' | 'thinking' | 'typing' | 'answering';
   showSource: boolean;
+  mode?: 'translate' | 'transcribe';
   fontScale: number;
   /** Direction of the utterance in progress. Past entries carry their own. */
   settings: TranslationSettings;
+  onEditSource?: (value: string) => void;
+  onEditTarget?: (value: string) => void;
 }) {
   const targetScrollRef = useRef<HTMLDivElement>(null);
   const sourceScrollRef = useRef<HTMLDivElement>(null);
@@ -83,8 +89,45 @@ export const CaptionStage = memo(function CaptionStage({
     }
   }, [history.length, liveSource, liveTarget, showSource]);
 
+  const [editingTarget, setEditingTarget] = useState(false);
+  const [editingSource, setEditingSource] = useState(false);
+  const [targetDraft, setTargetDraft] = useState(liveTarget);
+  const [sourceDraft, setSourceDraft] = useState(liveSource);
+
+  useEffect(() => {
+    if (!editingTarget) setTargetDraft(liveTarget);
+  }, [editingTarget, liveTarget]);
+
+  useEffect(() => {
+    if (!editingSource) setSourceDraft(liveSource);
+  }, [editingSource, liveSource]);
+
   const isEmpty = history.length === 0 && !liveTarget && !liveSource;
   const processingLabel = getProcessingLabel(processingPhase);
+  const hasActiveTarget = Boolean(liveTarget) || processingPhase !== 'idle' || history.length > 0;
+  const hasActiveSource = Boolean(liveSource) || processingPhase !== 'idle' || history.length > 0;
+
+  const submitTargetEdit = useCallback(() => {
+    const value = targetDraft.trim();
+    onEditTarget?.(value);
+    setEditingTarget(false);
+  }, [onEditTarget, targetDraft]);
+
+  const submitSourceEdit = useCallback(() => {
+    const value = sourceDraft.trim();
+    onEditSource?.(value);
+    setEditingSource(false);
+  }, [onEditSource, sourceDraft]);
+
+  const beginTargetEdit = useCallback(() => {
+    setTargetDraft(liveTarget || '');
+    setEditingTarget(true);
+  }, [liveTarget]);
+
+  const beginSourceEdit = useCallback(() => {
+    setSourceDraft(liveSource || '');
+    setEditingSource(true);
+  }, [liveSource]);
 
   return (
     <section
@@ -101,9 +144,12 @@ export const CaptionStage = memo(function CaptionStage({
         </div>
       ) : null}
 
-      <div className={`caption-panels ${showSource ? 'split' : 'single'}`}>
-        <section className="caption-panel caption-panel--target" aria-label="Translated captions">
-          {showSource ? <div className="panel-label">Translated</div> : null}
+      <div className={`caption-panels ${showSource && mode !== 'transcribe' ? 'split' : 'single'}`}>
+        {mode !== 'transcribe' ? (
+          <section className="caption-panel caption-panel--target" aria-label="Translated captions">
+          <div className="panel-header">
+            {showSource ? <div className="panel-label">Translated</div> : null}
+          </div>
           <div className="caption-scroll" ref={targetScrollRef}>
             {liveTarget || liveSource ? (
               <div className="processing-state" aria-live="polite">
@@ -119,22 +165,60 @@ export const CaptionStage = memo(function CaptionStage({
               </article>
             ))}
 
-            {liveTarget ? (
+            {hasActiveTarget && !editingTarget ? (
               <article className="caption-block current" aria-live="polite">
-                <p className="caption-target" lang={langAttribute(settings.targetLanguage)}>
-                  {liveTarget}
+                <p
+                  className="caption-target caption-editable"
+                  lang={langAttribute(settings.targetLanguage)}
+                  onClick={beginTargetEdit}
+                  role="textbox"
+                  tabIndex={0}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      beginTargetEdit();
+                    }
+                  }}
+                >
+                  {liveTarget || ' '}
                   <span className="caret" aria-hidden="true" />
                 </p>
               </article>
             ) : null}
 
+            {editingTarget ? (
+              <article className="caption-block current caption-editor-block" aria-live="polite">
+                <textarea
+                  className="caption-editor"
+                  value={targetDraft}
+                  onChange={(event) => setTargetDraft(event.target.value)}
+                  onBlur={submitTargetEdit}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' && !event.shiftKey) {
+                      event.preventDefault();
+                      submitTargetEdit();
+                    }
+                    if (event.key === 'Escape') {
+                      event.preventDefault();
+                      setEditingTarget(false);
+                      setTargetDraft(liveTarget || '');
+                    }
+                  }}
+                  autoFocus
+                />
+              </article>
+            ) : null}
+
             <div ref={targetEndRef} />
           </div>
-        </section>
+          </section>
+        ) : null}
 
         {showSource ? (
           <section className="caption-panel caption-panel--source" aria-label="Source captions">
-            <div className="panel-label">Source</div>
+            <div className="panel-header">
+              <div className="panel-label">Source</div>
+            </div>
             <div className="caption-scroll" ref={sourceScrollRef}>
               {history.map((entry) => (
                 <article key={entry.id} className="caption-block past">
@@ -144,12 +228,47 @@ export const CaptionStage = memo(function CaptionStage({
                 </article>
               ))}
 
-              {liveSource ? (
+              {hasActiveSource && !editingSource ? (
                 <article className="caption-block current" aria-live="polite">
-                  <p className="caption-source" lang={langAttribute(settings.sourceLanguage)}>
-                    {liveSource}
+                  <p
+                    className="caption-source caption-editable"
+                    lang={langAttribute(settings.sourceLanguage)}
+                    onClick={beginSourceEdit}
+                    role="textbox"
+                    tabIndex={0}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        beginSourceEdit();
+                      }
+                    }}
+                  >
+                    {liveSource || ' '}
                     <span className="caret" aria-hidden="true" />
                   </p>
+                </article>
+              ) : null}
+
+              {editingSource ? (
+                <article className="caption-block current caption-editor-block" aria-live="polite">
+                  <textarea
+                    className="caption-editor"
+                    value={sourceDraft}
+                    onChange={(event) => setSourceDraft(event.target.value)}
+                    onBlur={submitSourceEdit}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' && !event.shiftKey) {
+                        event.preventDefault();
+                        submitSourceEdit();
+                      }
+                      if (event.key === 'Escape') {
+                        event.preventDefault();
+                        setEditingSource(false);
+                        setSourceDraft(liveSource || '');
+                      }
+                    }}
+                    autoFocus
+                  />
                 </article>
               ) : null}
 

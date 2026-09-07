@@ -118,55 +118,28 @@ Documented by Google for the Live Translate model:
 npm run dev        # token server + Vite dev server
 npm run build      # typecheck and build to dist/
 npm run typecheck
-npm start          # token server only (production)
+npm start          # production server: frontend + token API
 ```
 
-### GitHub Pages deployment
+### Public deployment on Render
 
-This project is ready for GitHub Pages hosting from the generated `dist/` folder.
+GitHub Pages can display the interface but cannot run the token server. Deploy
+this repository as a Render web service to run both parts on one HTTPS URL:
 
-1. If this folder is not already a Git repository, initialize it and push it to GitHub:
+1. Open [Render](https://render.com), choose **New → Blueprint**, and connect
+   this GitHub repository.
+2. Render reads `render.yaml`. When prompted, enter `GEMINI_API_KEY` as a secret.
+3. Create the service and wait for the first deployment to finish.
+4. Open the generated `https://...onrender.com` address and allow microphone
+   access.
 
-```powershell
-git init
-git add .
-git commit -m "Initial commit"
-git remote add origin https://github.com/<your-username>/<your-repo-name>.git
-git push -u origin main
-```
-
-2. If you are publishing to a repository site, set `VITE_BASE_PATH` to the repo path.
-   For example:
+The production server serves `dist/` and `/api/token` from the same origin.
+Render's generated URL is allowed automatically. For a custom domain, set:
 
 ```text
-VITE_BASE_PATH=/your-repo-name/
+ALLOWED_ORIGINS=https://your-domain.example
 ```
 
-   If you are publishing to a user or organization site, use `/` instead.
-
-3. Build the app locally:
-
-```powershell
-npm ci
-npm run build
-```
-
-4. The build output will be in `dist/`. You can preview it locally with:
-
-```powershell
-npm run preview
-```
-
-A GitHub Actions workflow is included in `.github/workflows/pages.yml` to build
-and publish the site automatically whenever you push to `main`.
-
-> Note: GitHub Pages can host only the static frontend. The token server in
-`server/index.ts` cannot run on Pages.
->
-> For a fully working deployment, host the token server on a separate HTTPS-capable
-> server and configure `ALLOWED_ORIGINS` to include the Pages origin.
->
-For production, serve `dist/` as static files and run the token server behind
-the same origin, with `ALLOWED_ORIGINS` set accordingly. The Live API requires
-HTTPS for microphone access anywhere other than `localhost`.
->>>>>>> 92195cf (Initial project import for Live Translation UI)
+The free Render plan may sleep while unused, so its first request can take a
+little longer. For event use, choose an always-on plan and test the microphone,
+network, Gemini quota, and a full reconnect cycle before the talk.

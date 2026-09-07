@@ -53,6 +53,7 @@ export default function App() {
   const [selectedDeviceId, setSelectedDeviceId] = useState('');
   const [selectedOutputDeviceId, setSelectedOutputDeviceId] = useState('');
   const [showSource, setShowSource] = useState(true);
+  const [mode, setMode] = useState<'translate' | 'transcribe'>('translate');
   const [fontScale, setFontScale] = useState(1);
   const [chromeVisible, setChromeVisible] = useState(true);
   const [cabinAudioLanguage, setCabinAudioLanguage] = useState(
@@ -130,10 +131,22 @@ export default function App() {
   );
 
   const handleStart = useCallback(async () => {
-    await live.start(selectedDeviceId || undefined);
+    const sessionTargetLanguage =
+      mode === 'transcribe'
+        ? settings.sourceLanguage === AUTO_DETECT
+          ? DEFAULT_SOURCE_LANGUAGE
+          : settings.sourceLanguage
+        : settings.targetLanguage;
+
+    setShowSource(true);
+    await live.start(selectedDeviceId || undefined, {
+      mode,
+      targetLanguage: sessionTargetLanguage,
+      echoTargetLanguage: mode === 'translate' ? settings.echoTargetLanguage : false,
+    });
     // Labels only become readable after permission is granted.
     void refreshDevices();
-  }, [live, selectedDeviceId, refreshDevices]);
+  }, [live, mode, selectedDeviceId, settings, refreshDevices]);
 
   const restartSession = useCallback(async () => {
     await live.stop();
@@ -180,6 +193,8 @@ export default function App() {
             live.setOutputDevice(id || null);
           }}
           settings={settings}
+          mode={mode}
+          onModeChange={setMode}
           onSettings={setSettings}
           onSwapLanguages={handleSwapLanguages}
           cabinEnabled={cabinEnabled}
@@ -210,9 +225,12 @@ export default function App() {
         liveSource={live.liveSource}
         liveTarget={live.liveTarget}
         processingPhase={live.processingPhase}
-        showSource={showSource}
+        showSource={mode === 'transcribe' ? true : showSource}
+        mode={mode}
         fontScale={fontScale}
         settings={settings}
+        onEditSource={live.setLiveSourceText}
+        onEditTarget={live.setLiveTargetText}
       />
 
       {chromeVisible ? (

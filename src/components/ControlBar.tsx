@@ -21,6 +21,8 @@ export const ControlBar = memo(function ControlBar({
   selectedOutputDeviceId,
   onSelectOutputDevice,
   settings,
+  mode,
+  onModeChange,
   onSettings,
   onSwapLanguages,
   cabinEnabled,
@@ -52,6 +54,8 @@ export const ControlBar = memo(function ControlBar({
   selectedOutputDeviceId: string;
   onSelectOutputDevice(id: string): void;
   settings: TranslationSettings;
+  mode: 'translate' | 'transcribe';
+  onModeChange(mode: 'translate' | 'transcribe'): void;
   onSettings(next: TranslationSettings): void;
   onSwapLanguages(): void;
   cabinEnabled: boolean;
@@ -83,6 +87,27 @@ export const ControlBar = memo(function ControlBar({
       <div className="control-group brand">
         <span className="brand-mark">Friday</span>
         <span className="brand-text">Live Translation</span>
+      </div>
+
+      <div className="control-group tab-group" role="tablist" aria-label="Mode">
+        <button
+          type="button"
+          className={`tab-button ${mode === 'translate' ? 'active' : ''}`}
+          onClick={() => onModeChange('translate')}
+          role="tab"
+          aria-selected={mode === 'translate'}
+        >
+          Translate
+        </button>
+        <button
+          type="button"
+          className={`tab-button ${mode === 'transcribe' ? 'active' : ''}`}
+          onClick={() => onModeChange('transcribe')}
+          role="tab"
+          aria-selected={mode === 'transcribe'}
+        >
+          Transcribe
+        </button>
       </div>
 
       <div className="control-group">
@@ -143,36 +168,40 @@ export const ControlBar = memo(function ControlBar({
           ))}
         </select>
 
-        <button
-          type="button"
-          className="btn btn-ghost btn-swap"
-          onClick={onSwapLanguages}
-          disabled={isRunning || settings.sourceLanguage === AUTO_DETECT}
-          title={
-            lockedWhileRunning ??
-            (settings.sourceLanguage === AUTO_DETECT
-              ? 'Pick a spoken language before swapping'
-              : 'Swap the two languages')
-          }
-          aria-label="Swap languages"
-        >
-          ⇄
-        </button>
+        {mode === 'translate' ? (
+          <>
+            <button
+              type="button"
+              className="btn btn-ghost btn-swap"
+              onClick={onSwapLanguages}
+              disabled={isRunning || settings.sourceLanguage === AUTO_DETECT}
+              title={
+                lockedWhileRunning ??
+                (settings.sourceLanguage === AUTO_DETECT
+                  ? 'Pick a spoken language before swapping'
+                  : 'Swap the two languages')
+              }
+              aria-label="Swap languages"
+            >
+              ⇄
+            </button>
 
-        <select
-          className="lang-select"
-          value={settings.targetLanguage}
-          onChange={(event) => onSettings({ ...settings, targetLanguage: event.target.value })}
-          disabled={isRunning}
-          aria-label="Caption language"
-          title={lockedWhileRunning ?? 'Language the captions are translated into'}
-        >
-          {LANGUAGES.map((language) => (
-            <option key={language.code} value={language.code}>
-              {language.label}
-            </option>
-          ))}
-        </select>
+            <select
+              className="lang-select"
+              value={settings.targetLanguage}
+              onChange={(event) => onSettings({ ...settings, targetLanguage: event.target.value })}
+              disabled={isRunning}
+              aria-label="Caption language"
+              title={lockedWhileRunning ?? 'Language the captions are translated into'}
+            >
+              {LANGUAGES.map((language) => (
+                <option key={language.code} value={language.code}>
+                  {language.label}
+                </option>
+              ))}
+            </select>
+          </>
+        ) : null}
       </div>
 
       <div className="control-group">
@@ -182,7 +211,7 @@ export const ControlBar = memo(function ControlBar({
           </button>
         ) : (
           <button type="button" className="btn btn-start" onClick={onStart}>
-            Start translating
+            {mode === 'transcribe' ? 'Start transcribing' : 'Start translating'}
           </button>
         )}
       </div>
