@@ -1,5 +1,5 @@
 /**
- * Client configuration for the UEH live translation stage display.
+ * Client configuration for the live translation stage display.
  *
  * Every value here traces back to the Gemini Live API documentation — see
  * docs/live-api-reference.md for the citation behind each one.
@@ -20,7 +20,7 @@ export const LIVE_WS_BASE =
 
 /**
  * Where the language pickers start. The operator can change all three before
- * pressing Start; these are only the defaults for a UEH event.
+ * pressing Start; these are general-purpose defaults.
  *
  * The source language is *not* a protocol field — the model detects it from the
  * audio — so this value only labels the source caption line and the exported
@@ -33,8 +33,8 @@ export const DEFAULT_TARGET_LANGUAGE = 'en';
 
 /**
  * If the speaker switches into the target language, echo it through rather than
- * silencing it. On by default: UEH speakers mix English terminology into
- * Vietnamese sentences, and silencing those stretches drops content.
+ * silencing it. This is on by default because speakers often mix terminology
+ * from the target language into their sentences.
  */
 export const DEFAULT_ECHO_TARGET_LANGUAGE = true;
 

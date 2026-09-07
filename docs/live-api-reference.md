@@ -44,7 +44,7 @@ option — the model auto-detects the source language.
   to `en`. The guide's full table (78 codes) is transcribed into
   `src/lib/languages.ts`, which is what the operator's picker lists.
 - `echoTargetLanguage` — when the input is *already* English, echo it through
-  instead of silencing it. Set `true` here because UEH speakers mix English
+  instead of silencing it. Set `true` here because speakers may mix English
   terminology into Vietnamese sentences, and silencing those stretches would
   drop content from the captions.
 

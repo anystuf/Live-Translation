@@ -1,9 +1,9 @@
 {
-  "name": "ueh-live-translation",
+  "name": "live-translation",
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Live Vietnamese to English speech translation captions for UEH University speaker events, powered by the Gemini Live API.",
+  "description": "Real-time multilingual speech translation captions powered by the Gemini Live API.",
   "engines": {
     "node": ">=20"
   },

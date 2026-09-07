@@ -85,8 +85,7 @@ export const ControlBar = memo(function ControlBar({
   return (
     <header className="control-bar">
       <div className="control-group brand">
-        <span className="brand-mark">Friday</span>
-        <span className="brand-text">Live Translation</span>
+        <span className="brand-mark">Live Translation</span>
       </div>
 
       <div className="control-group tab-group" role="tablist" aria-label="Mode">

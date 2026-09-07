@@ -1,6 +1,6 @@
-# UEH Live Translation
+# Live Translation
 
-Real-time Vietnamese → English captions for speaker events at UEH University.
+Real-time multilingual captions for talks, meetings, and live events.
 
 A laptop takes the lectern microphone, streams it to the Gemini Live API's
 translation model, and projects large English captions with the Vietnamese
@@ -9,7 +9,7 @@ interpreter headsets.
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│ UEH Live Translation  ● Live   [mic ▾] [Stop]  ▓▓▓▓▁▁▁▁      │
+│ Live Translation  ● Live       [mic ▾] [Stop]  ▓▓▓▓▁▁▁▁      │
 ├──────────────────────────────────────────────────────────────┤
 │                                                              │
 │   Good morning, and welcome to today's seminar.              │
