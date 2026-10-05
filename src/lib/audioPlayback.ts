@@ -18,6 +18,33 @@ export class AudioPlayback {
 
   private volume = 1;
 
+  /**
+   * Mobile browsers commonly ignore the requested 24 kHz AudioContext rate
+   * and create a 48 kHz graph. Feeding 24 kHz PCM directly into that graph
+   * doubles its speed and pitch, which sounds like a sustained squeal.
+   */
+  private resampleForOutput(samples: Float32Array): Float32Array {
+    const outputRate = this.context?.sampleRate ?? OUTPUT_SAMPLE_RATE;
+    if (outputRate === OUTPUT_SAMPLE_RATE || samples.length < 2) return samples;
+
+    const outputLength = Math.max(
+      1,
+      Math.round(samples.length * (outputRate / OUTPUT_SAMPLE_RATE)),
+    );
+    const output = new Float32Array(outputLength);
+    const sourceStep = OUTPUT_SAMPLE_RATE / outputRate;
+
+    for (let index = 0; index < outputLength; index += 1) {
+      const sourcePosition = Math.min(index * sourceStep, samples.length - 1);
+      const left = Math.floor(sourcePosition);
+      const right = Math.min(left + 1, samples.length - 1);
+      const mix = sourcePosition - left;
+      output[index] = samples[left] + (samples[right] - samples[left]) * mix;
+    }
+
+    return output;
+  }
+
   /** Idempotent: safe to call on every enqueue. */
   private async init(): Promise<void> {
     if (this.ready) return this.ready;
@@ -64,7 +91,8 @@ export class AudioPlayback {
   /** Queue one base64 PCM16 chunk straight from the Live API. */
   async enqueue(base64Pcm: string): Promise<void> {
     await this.init();
-    const samples = pcm16ToFloat32(base64ToBytes(base64Pcm));
+    const decoded = pcm16ToFloat32(base64ToBytes(base64Pcm));
+    const samples = this.resampleForOutput(decoded);
     this.node?.port.postMessage(samples, [samples.buffer]);
   }
 
@@ -97,12 +125,15 @@ export class AudioPlayback {
 
   async close(): Promise<void> {
     this.clear();
+    this.audioElement?.pause();
+    if (this.audioElement) this.audioElement.srcObject = null;
     this.node?.disconnect();
     this.gain?.disconnect();
     await this.context?.close();
     this.context = null;
     this.node = null;
     this.gain = null;
+    this.audioElement = null;
     this.ready = null;
   }
 }

@@ -2,7 +2,7 @@
  * Operator controls. Hidden with the "H" key so the projector shows only
  * captions once the talk is running.
  */
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import type { MediaDeviceOption } from '../lib/deviceOptions';
 import { StatusPill } from './StatusPill';
 import { MicMeter } from './MicMeter';
@@ -77,18 +77,19 @@ export const ControlBar = memo(function ControlBar({
   onExport(): void;
   onClear(): void;
 }) {
+  const [mobileExpanded, setMobileExpanded] = useState(false);
   // The direction is fixed inside the Live API `setup` message, so it can only
   // be chosen between sessions — same rule as the microphone.
   const lockedWhileRunning = isRunning
     ? 'Stop translating to change the direction'
     : undefined;
   return (
-    <header className="control-bar">
+    <header className={`control-bar${mobileExpanded ? ' mobile-expanded' : ''}`}>
       <div className="control-group brand">
         <span className="brand-mark">Live Translation</span>
       </div>
 
-      <div className="control-group tab-group" role="tablist" aria-label="Mode">
+      <div className="control-group tab-group advanced-control" role="tablist" aria-label="Mode">
         <button
           type="button"
           className={`tab-button ${mode === 'translate' ? 'active' : ''}`}
@@ -109,11 +110,11 @@ export const ControlBar = memo(function ControlBar({
         </button>
       </div>
 
-      <div className="control-group">
+      <div className="control-group status-group">
         <StatusPill status={status} detail={statusDetail} />
       </div>
 
-      <div className="control-group">
+      <div className="control-group advanced-control">
         <select
           className="device-select"
           value={selectedDeviceId}
@@ -130,7 +131,7 @@ export const ControlBar = memo(function ControlBar({
         </select>
       </div>
 
-      <div className="control-group">
+      <div className="control-group advanced-control">
         <select
           className="device-select"
           value={selectedOutputDeviceId}
@@ -147,7 +148,7 @@ export const ControlBar = memo(function ControlBar({
         </select>
       </div>
 
-      <div className="control-group">
+      <div className="control-group language-group">
         <select
           className="lang-select"
           value={settings.sourceLanguage}
@@ -203,7 +204,7 @@ export const ControlBar = memo(function ControlBar({
         ) : null}
       </div>
 
-      <div className="control-group">
+      <div className="control-group start-group">
         {isRunning ? (
           <button type="button" className="btn btn-stop" onClick={onStop}>
             Stop
@@ -215,7 +216,7 @@ export const ControlBar = memo(function ControlBar({
         )}
       </div>
 
-      <div className="control-group">
+      <div className="control-group cabin-group">
         {isRunning && settings.targetLanguage !== sessionTargetLanguage ? (
           <div className="restart-notice" role="status" aria-live="polite">
             <span>Language change requires a restart to take effect.</span>
@@ -253,15 +254,15 @@ export const ControlBar = memo(function ControlBar({
             'Toggle cabin translation preset (sets source to Vietnamese and enables cabin audio)'
           }
         >
-          Cabin
+          Headset audio
         </button>
       </div>
 
-      <div className="control-group grow">
+      <div className="control-group grow meter-group">
         <MicMeter level={micLevel} label={micLabel} />
       </div>
 
-      <div className="control-group">
+      <div className="control-group advanced-control">
         <label className="toggle" title="Show the spoken-language line under each caption">
           <input
             type="checkbox"
@@ -312,11 +313,11 @@ export const ControlBar = memo(function ControlBar({
             checked={audioEnabled}
             onChange={(event) => onToggleAudio(event.target.checked)}
           />
-          <span>Audio</span>
+          <span>Headset audio</span>
         </label>
       </div>
 
-      <div className="control-group">
+      <div className="control-group advanced-control">
         <label className="slider" title="Caption size">
           <span aria-hidden="true">A</span>
           <input
@@ -331,7 +332,7 @@ export const ControlBar = memo(function ControlBar({
         </label>
       </div>
 
-      <div className="control-group">
+      <div className="control-group advanced-control">
         <button type="button" className="btn btn-ghost" onClick={onExport}>
           Export
         </button>
@@ -339,6 +340,15 @@ export const ControlBar = memo(function ControlBar({
           Clear
         </button>
       </div>
+
+      <button
+        type="button"
+        className="btn btn-ghost mobile-more-toggle"
+        aria-expanded={mobileExpanded}
+        onClick={() => setMobileExpanded((expanded) => !expanded)}
+      >
+        {mobileExpanded ? 'Fewer controls' : 'More controls'}
+      </button>
     </header>
   );
 });

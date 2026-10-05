@@ -334,6 +334,9 @@ export function useLiveTranslation(settings: TranslationSettings): UseLiveTransl
       try {
         const capture = await startCapture({
           deviceId,
+          // Phones normally use the same device for input and output. Their
+          // voice-processing path is worth enabling to reduce speaker feedback.
+          processing: navigator.maxTouchPoints > 0,
           onChunk: (pcm) => session.sendAudioChunk(pcm),
         });
         captureRef.current = capture;
@@ -390,10 +393,13 @@ export function useLiveTranslation(settings: TranslationSettings): UseLiveTransl
   const setAudioEnabled = useCallback((enabled: boolean) => {
     audioEnabledRef.current = enabled;
     setAudioEnabledState(enabled);
+    if (enabled && navigator.maxTouchPoints > 0) {
+      pushNotice('Headphones required on phones — speaker audio can feed back into the microphone and repeat.');
+    }
     if (!enabled) {
       playbackRef.current?.clear();
     }
-  }, []);
+  }, [pushNotice]);
 
   const setOutputDevice = useCallback((deviceId: string | null) => {
     outputDeviceIdRef.current = deviceId;

@@ -5,8 +5,9 @@
  * one render quantum at a time. Scheduling each chunk as its own AudioBuffer
  * would produce audible seams between them.
  *
- * The owning AudioContext must be created with `sampleRate: 24000` so no
- * resampling is needed here.
+ * The main thread resamples the model's 24 kHz output to the AudioContext's
+ * actual rate before queueing it. This matters on phones, which often force
+ * the context to 48 kHz even when 24 kHz was requested.
  */
 class PcmPlayerProcessor extends AudioWorkletProcessor {
   constructor() {
@@ -15,6 +16,8 @@ class PcmPlayerProcessor extends AudioWorkletProcessor {
     this.queue = [];
     /** Read offset into queue[0]. */
     this.offset = 0;
+    this.queuedSamples = 0;
+    this.maxQueuedSamples = sampleRate * 3;
 
     this.port.onmessage = (event) => {
       const data = event.data;
@@ -22,9 +25,19 @@ class PcmPlayerProcessor extends AudioWorkletProcessor {
         // Interruption: drop everything still queued, immediately.
         this.queue = [];
         this.offset = 0;
+        this.queuedSamples = 0;
         return;
       }
+      if (!(data instanceof Float32Array) || data.length === 0) return;
       this.queue.push(data);
+      this.queuedSamples += data.length;
+
+      // Never replay a long stale backlog after a mobile network stall.
+      while (this.queuedSamples > this.maxQueuedSamples && this.queue.length > 1) {
+        const dropped = this.queue.shift();
+        this.queuedSamples -= dropped.length;
+        this.offset = 0;
+      }
     };
   }
 
@@ -42,6 +55,7 @@ class PcmPlayerProcessor extends AudioWorkletProcessor {
       channel[i] = current[this.offset++];
       if (this.offset >= current.length) {
         this.queue.shift();
+        this.queuedSamples -= current.length;
         this.offset = 0;
       }
     }
