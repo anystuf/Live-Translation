@@ -13,6 +13,7 @@ import { createFrameCoalescer } from '../lib/frameCoalescer';
 import type { CaptionEntry, ConnectionStatus, TranslationSettings } from '../lib/types';
 import type { AppliedCorrection } from '../lib/normalizationTypes';
 import { normalizeVietnameseEnglishTerminology } from '../lib/vietnameseNormalizer';
+import { protectProperNames } from '../lib/properNameCorrections';
 import { getTurnFinaliseDelayMs } from '../lib/turnFinalization';
 
 export interface UseLiveTranslation {
@@ -179,8 +180,9 @@ export function useLiveTranslation(settings: TranslationSettings): UseLiveTransl
       finaliseTimerRef.current = null;
     }
 
-    const source = (liveSourceEditedRef.current ? liveSource : sourceRef.current).trim();
-    const target = (liveTargetEditedRef.current ? liveTarget : targetRef.current).trim();
+    const rawSource = (liveSourceEditedRef.current ? liveSource : sourceRef.current).trim();
+    const rawTarget = (liveTargetEditedRef.current ? liveTarget : targetRef.current).trim();
+    const { source, target } = protectProperNames(rawSource, rawTarget);
 
     if (!source && !target) {
       sourceRef.current = '';

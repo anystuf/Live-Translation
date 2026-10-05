@@ -1,5 +1,6 @@
 import { createFrameCoalescer } from '../src/lib/frameCoalescer';
 import { normalizeVietnameseEnglishTerminology } from '../src/lib/vietnameseNormalizer';
+import { protectProperNames } from '../src/lib/properNameCorrections';
 
 function assert(condition: boolean, msg: string) {
   if (!condition) {
@@ -46,6 +47,13 @@ async function run() {
   // painpoint
   res = normalizeVietnameseEnglishTerminology('we found a painpoint in the user flow', { selectedAccentProfile: 'mixed-unknown', currentText: 'painpoint' });
   assert(res.normalizedText.includes('pain point'), 'painpoint normalized');
+
+  const chamira = protectProperNames('Xin chào Chàm', 'Hello Idigo');
+  assert(chamira.source === 'Xin chào Chamira', 'Chàm corrected to protected name Chamira');
+  assert(chamira.target === 'Hello Chamira', 'Idigo corrected to protected name Chamira');
+
+  const indigoColour = protectProperNames('Tôi thích màu chàm', 'I like indigo');
+  assert(indigoColour.source === 'Tôi thích màu chàm', 'unpaired chàm is not treated as a name');
 
   console.log('Finished tests.');
 }
