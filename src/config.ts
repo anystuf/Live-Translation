@@ -13,10 +13,10 @@ export const LIVE_TRANSLATE_MODEL = 'gemini-3.5-live-translate-preview';
  *
  * When authenticating with an ephemeral token (`auth_tokens/...`) the method is
  * `BidiGenerateContentConstrained` and the credential goes in an `access_token`
- * query parameter — not `key`. Ephemeral tokens are v1alpha only.
+ * query parameter — not `key`. Live Translation tokens use v1beta.
  */
 export const LIVE_WS_BASE =
-  'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContentConstrained';
+  'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContentConstrained';
 
 /**
  * Where the language pickers start. The operator can change all three before

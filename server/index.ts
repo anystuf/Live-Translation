@@ -58,10 +58,10 @@ const isLocalhostOrigin = (origin: string) => {
   }
 };
 
-// v1alpha is required for ephemeral token support.
+// Live Translation ephemeral tokens use v1beta.
 const ai = new GoogleGenAI({
   apiKey: API_KEY,
-  httpOptions: { apiVersion: 'v1alpha' },
+  httpOptions: { apiVersion: 'v1beta' },
 });
 
 const app = express();
@@ -113,7 +113,10 @@ app.post('/api/token', async (_req, res) => {
         liveConnectConstraints: {
           model: LIVE_TRANSLATE_MODEL,
         },
-        httpOptions: { apiVersion: 'v1alpha' },
+        // Keep the model constrained, but allow the client's selected target
+        // language and transcription options instead of locking API defaults.
+        lockAdditionalFields: [],
+        httpOptions: { apiVersion: 'v1beta' },
       },
     });
 

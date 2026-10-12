@@ -1,5 +1,17 @@
 # Live API reference notes
 
+## Update — 2026-10-12: target-language token fix
+
+The current Live Translate guide requires `v1beta` for ephemeral tokens.
+When target language is selected in the browser, token creation must include
+`lockAdditionalFields: []` while constraining only the model. Otherwise default
+configuration can remain locked, preventing English → Vietnamese output.
+Server token minting and client WebSocket now both use `v1beta`.
+Verified with an English PCM sample: output included “Chào buổi sáng”,
+“Hội nghị Đổi mới Quốc tế”, and “Diễn giả tiếp theo của chúng ta là Chamira”.
+Older v1alpha notes below describe the original integration, not current code.
+Source: https://ai.google.dev/gemini-api/docs/live-api/live-translate
+
 Every non-obvious value in this codebase, and where it came from. Verified
 2026-07-29 against the Gemini Live API docs and `@google/genai` v1.52.0.
 
