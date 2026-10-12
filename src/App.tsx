@@ -16,6 +16,23 @@ import {
 } from './config';
 
 export default function App() {
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    try {
+      return localStorage.getItem('theme') === 'dark' ? 'dark' : 'light';
+    } catch {
+      return 'light';
+    }
+  });
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    try {
+      localStorage.setItem('theme', theme);
+    } catch {
+      // Theme switching still works when storage is unavailable.
+    }
+  }, [theme]);
+
   const [settings, setSettings] = useState<TranslationSettings>({
     sourceLanguage: DEFAULT_SOURCE_LANGUAGE,
     targetLanguage: DEFAULT_TARGET_LANGUAGE,
@@ -180,6 +197,8 @@ export default function App() {
     <div className={`app${chromeVisible ? '' : ' chrome-hidden'}`}>
       {chromeVisible ? (
         <ControlBar
+          theme={theme}
+          onToggleTheme={() => setTheme((current) => current === 'light' ? 'dark' : 'light')}
           status={live.status}
           statusDetail={live.statusDetail}
           isRunning={live.isRunning}

@@ -11,6 +11,8 @@ import type { ConnectionStatus, TranslationSettings } from '../lib/types';
 import type { VietnameseAccentProfile } from '../lib/normalizationTypes';
 
 export const ControlBar = memo(function ControlBar({
+  theme,
+  onToggleTheme,
   status,
   statusDetail,
   isRunning,
@@ -44,6 +46,8 @@ export const ControlBar = memo(function ControlBar({
   onExport,
   onClear,
 }: {
+  theme: 'light' | 'dark';
+  onToggleTheme(): void;
   status: ConnectionStatus;
   statusDetail: string;
   isRunning: boolean;
@@ -87,7 +91,15 @@ export const ControlBar = memo(function ControlBar({
     <header className={`control-bar${mobileExpanded ? ' mobile-expanded' : ''}`}>
       <div className="control-group brand">
         <span className="brand-mark">Live Translation</span>
+        <span className="brand-credit">by TTN &amp; QT</span>
+        <a className="brand-source" href="https://github.com/anystuf/Live-Translation" target="_blank" rel="noopener noreferrer" title="View the tool's source code on GitHub">
+          Open source ↗
+        </a>
       </div>
+
+      <button type="button" className="btn theme-toggle" onClick={onToggleTheme} aria-label={theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'} aria-pressed={theme === 'dark'}>
+        {theme === 'light' ? '☾ Dark' : '☀ Light'}
+      </button>
 
       <div className="control-group tab-group advanced-control" role="tablist" aria-label="Mode">
         <button
