@@ -114,10 +114,6 @@ body {
   color: var(--dim);
 }
 
-.brand-source {
-  text-underline-offset: 3px;
-}
-
 .theme-toggle {
   white-space: nowrap;
 }

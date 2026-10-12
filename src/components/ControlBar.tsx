@@ -92,9 +92,7 @@ export const ControlBar = memo(function ControlBar({
       <div className="control-group brand">
         <span className="brand-mark">Live Translation</span>
         <span className="brand-credit">by TTN &amp; QT</span>
-        <a className="brand-source" href="https://github.com/anystuf/Live-Translation" target="_blank" rel="noopener noreferrer" title="View the tool's source code on GitHub">
-          Open source ↗
-        </a>
+        <span className="brand-source">Open source</span>
       </div>
 
       <button type="button" className="btn theme-toggle" onClick={onToggleTheme} aria-label={theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'} aria-pressed={theme === 'dark'}>
